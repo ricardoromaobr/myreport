@@ -1,10 +1,11 @@
+using MyReport.Model;
 using MyReport.Model.Controls;
 
 namespace MyReport.Renderer.SkiaSharp;
 
-public static class ReportRendererExtensions
+public  class RegisterDefaultRenderers : IRegisterDefaultRenderers
 {
-    public static void AddDefaultRenderers(this ReportRenderer reportRenderer)
+    public  void AddRenderers (IReportRenderer reportRenderer)
     {
         reportRenderer.RegisterRenderer(typeof(Line), new LineRenderer());
         reportRenderer.RegisterRenderer(typeof(TextBlock), new TextBlockRenderer());

@@ -43,9 +43,9 @@ public class ReportRuntimeBuilder
         return this;
     }
 
-    public ReportRuntimeBuilder AddDefaultControlsRenderer()
+    public ReportRuntimeBuilder AddDefaultControlsRenderer (IRegisterDefaultRenderers registerDefaultRenderers)
     {
-        _addDefaultControlRenderer = () => AddDefaultControlsRenderer();
+        _addDefaultControlRenderer = () => registerDefaultRenderers.AddRenderers(_reportRenderer);
         return this;
     }
 

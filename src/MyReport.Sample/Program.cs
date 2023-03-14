@@ -136,7 +136,9 @@ var report = ReportBuilder
              {
                  Nome = "Heitor Silva Romão", 
                  Idade = 4
-             }
+             },
+             
+             
          };
 
          report.DataSource = datasource;
@@ -152,7 +154,7 @@ var report = ReportBuilder
      })
      .build();
 
-
+/*
 
 var reportEngine = ReportEngineBuilder
     .Create()
@@ -171,24 +173,14 @@ var reportEngine = ReportEngineBuilder
         reportRenderer.RegisterRenderer(typeof(DetailSection), sr);
     })
     .Build();
+    */ 
+
 
  ReportRuntimeBuilder
     .Create()
     .AddReport(report)
-    .AddReportRenderer(() =>
-    {
-        ReportRenderer reportRenderer = new ReportRenderer();
-        reportRenderer.RegisterRenderer(typeof(Line), new LineRenderer());
-        reportRenderer.RegisterRenderer(typeof(TextBlock), new TextBlockRenderer());
-        reportRenderer.RegisterRenderer(typeof(Image), new ImageRenderer());
-        SectionRenderer sr = new SectionRenderer();
-        reportRenderer.RegisterRenderer(typeof(ReportHeaderSection), sr);
-        reportRenderer.RegisterRenderer(typeof(ReportFooterSection), sr);
-        reportRenderer.RegisterRenderer(typeof(PageHeaderSection), sr);
-        reportRenderer.RegisterRenderer(typeof(PageFooterSection), sr);
-        reportRenderer.RegisterRenderer(typeof(DetailSection), sr);
-        return reportRenderer;
-    })
+    .AddReportRenderer(new ReportRenderer())
+    .AddDefaultControlsRenderer(new RegisterDefaultRenderers())
     .ConfireExportToPdf(() => new ExportToPdfService())
     .Build()
     .Run()
