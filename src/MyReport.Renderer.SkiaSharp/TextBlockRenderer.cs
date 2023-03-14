@@ -136,7 +136,6 @@ public class TextBlockRenderer : IControlRenderer
 
         size.Height += textBlock.Border.TopWidth + textBlock.Border.BottomWidth;
         size.Width += textBlock.Border.LeftWidth + textBlock.Border.RightWidth;
-
         return size;
     }
 
@@ -146,6 +145,14 @@ public class TextBlockRenderer : IControlRenderer
         SKFontStyleWeight fontStyleWeight = DefineFontStyelWeight(textBlock.FontWeight);
         SKFontStyle fontStyle = new SKFontStyle(fontStyleWeight, SKFontStyleWidth.Normal, fontStyleSlant);
         SKTypeface typeface = SKTypeface.FromFamilyName(textBlock.FontName, fontStyle);
+
+        SKTextAlign textAlign = textBlock.HorizontalAlignment switch
+        {
+            HorizontalAlignment.Center => SKTextAlign.Center,
+            HorizontalAlignment.Left => SKTextAlign.Left,
+            HorizontalAlignment.Right => SKTextAlign.Right,
+            _ => SKTextAlign.Left
+        };
 
         SKPaint paint = new SKPaint
         {
