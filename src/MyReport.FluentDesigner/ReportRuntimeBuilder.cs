@@ -9,6 +9,7 @@ public class ReportRuntimeBuilder
     private Func<Report> _addReport;
     private Func<IReportRenderer> _addReportRendeter;
     private Func<IExportToPdfService> _configExportToPdf;
+    private Action _addDefaultControlRenderer;
 
     public static ReportRuntimeBuilder Create () => new ReportRuntimeBuilder();
     
@@ -41,6 +42,13 @@ public class ReportRuntimeBuilder
         _configExportToPdf = configExportToPdf;
         return this;
     }
+
+    public ReportRuntimeBuilder AddDefaultControlsRenderer()
+    {
+        _addDefaultControlRenderer = () => AddDefaultControlsRenderer();
+        return this;
+    }
+
     public ReportRuntime Build()
     {
         var report = _addReport?.Invoke();
@@ -51,6 +59,8 @@ public class ReportRuntimeBuilder
 
         var reportRuntime = new ReportRuntime(_report, _reportRenderer);
         reportRuntime.ExportToPdfService = _configExportToPdf?.Invoke()!;
+        _addReportRendeter?.Invoke();
+        
         return reportRuntime;
     }
 }
