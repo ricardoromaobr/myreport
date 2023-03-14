@@ -59,7 +59,7 @@ public class ReportRuntimeBuilder
 
         var reportRuntime = new ReportRuntime(_report, _reportRenderer);
         reportRuntime.ExportToPdfService = _configExportToPdf?.Invoke()!;
-        _addReportRendeter?.Invoke();
+        _addDefaultControlRenderer?.Invoke();
         
         return reportRuntime;
     }
