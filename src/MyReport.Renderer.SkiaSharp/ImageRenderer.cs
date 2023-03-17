@@ -13,53 +13,54 @@ public class ImageRenderer : IControlRenderer
         Image image = control as Image;
         SKRect borderRect;
         canvas.Save();
-        
-        borderRect = new SKRect((float) image.Location.X, (float) image.Location.Y, (float) (image.Location.X +image.Width),
-            (float) image.Bottom);
-        
+
+        borderRect = new SKRect((float)image.Location.X, (float)image.Location.Y,
+            (float)(image.Location.X + image.Width),
+            (float)image.Bottom);
+
         canvas.ClipRect(borderRect);
 
 
         var paint = new SKPaint
         {
-            Color = new SKColor((byte) image.BackgroundColor.R, (byte) image.BackgroundColor.G,
-                (byte) image.BackgroundColor.B, (byte) image.BackgroundColor.A)
+            Color = new SKColor((byte)image.BackgroundColor.R, (byte)image.BackgroundColor.G,
+                (byte)image.BackgroundColor.B, (byte)image.BackgroundColor.A)
         };
 
         var bitmap = SKBitmap.Decode(image.Data);
-        var point = new SKPoint((float) (image.Location.X + image.Border.LeftWidth), 
-            (float) (image.Location.Y + image.Border.TopWidth));
+        var newSize = new SKSizeI((int)(image.Width - image.Border.LeftWidth - image.Border.RightWidth),
+            (int) (image.Height - image.Border.BottomWidth - image.Border.TopWidth));
+        
+        var point = new SKPoint((float)(image.Location.X + image.Border.LeftWidth),
+            (float)(image.Location.Y + image.Border.TopWidth));
 
         paint = new SKPaint
         {
-            Color = SKColors.Yellow
+            Color = new SKColor((byte)image.BackgroundColor.R, (byte)image.BackgroundColor.G, (byte)image.BackgroundColor.G)
         };
-    
 
         canvas.DrawRect(borderRect, paint);
-    canvas.DrawBitmap(bitmap, point);
-        
-        
-       
-    
+        var resizedImage = bitmap.Resize(newSize,SKFilterQuality.High);
+        canvas.DrawBitmap(resizedImage, point);
 
 
-    canvas.Restore (); 
+        canvas.Restore();
     }
 
     public Size Measure(object context, Control control)
     {
         Image image = control as Image;
-        
-        
-        SKRect borderRect = new SKRect ((float)image.Location.X, (float)image.Location.Y, 
-            (float)(image.Location.X + image.Width + image.Border.LeftWidth + image.Border.RightWidth), 
+
+
+        SKRect borderRect = new SKRect((float)image.Location.X, (float)image.Location.Y,
+            (float)(image.Location.X + image.Width + image.Border.LeftWidth + image.Border.RightWidth),
             (float)(image.Bottom + image.Border.TopWidth + image.Border.BottomWidth));
-        return new MyReport.Model.Size(borderRect.Width,borderRect.Height);
+        return new MyReport.Model.Size(borderRect.Width, borderRect.Height);
     }
 
     public double Dpi { get; set; }
     public bool DesignMode { get; set; }
+
     public Control[] BreakOffControlAtMostAtHeight(object context, Control control, double height)
     {
         Control[] controls = new Control[2];
@@ -67,7 +68,7 @@ public class ImageRenderer : IControlRenderer
         var newControl1 = control.CreateControl() as Image;
         newControl.Height = height;
         newControl1.Height = control.Height - height;
-        newControl1.Offset = new MyReport.Model.Point(0,-height);
+        newControl1.Offset = new MyReport.Model.Point(0, -height);
         newControl1.Top = 0;
         controls[1] = newControl1;
         controls[0] = newControl;

@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Net.Mime;
 using MyReport.Model;
 using MyReport.Model.Controls;
 using SkiaSharp;
@@ -188,10 +189,17 @@ public class TextBlockRenderer : IControlRenderer
 
     public Control[] BreakOffControlAtMostAtHeight(object context, Control control, double height)
     {
+        var canvas = context as SKCanvas;
+        
         Control[] controls = new Control[2];
 
         TextBlock textBlock = control.CreateControl() as TextBlock;
 
+        var paint = CreatePaint(control as TextBlock);
+
+        var lines = WrappedLines(textBlock.Text,(float) textBlock.Width, paint);
+        
+        //TODO: Measure the size of the component   <---
 
         return controls;
     }

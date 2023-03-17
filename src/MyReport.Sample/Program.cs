@@ -12,7 +12,7 @@ var report = ReportBuilder
      .Create()
      .BuilderReportHeader(headerSecion =>
      {
-         headerSecion.Height = 8;
+         headerSecion.Height = 250;
 
          var x = headerSecion;
          TextBlock textBlock = new();
@@ -29,7 +29,7 @@ var report = ReportBuilder
 
          image.Data = Convert.FromBase64String(base64String);
 
-         image.Location = new Point(250, 14);
+         image.Location = new Point(0, 14);
          image.Width = 100;
          image.Height = 100;
          image.Border = new Border(10);
@@ -52,7 +52,7 @@ var report = ReportBuilder
      }) 
      .BuilderDetail(detail =>
      {
-         detail.Height = 7;
+         detail.Height = 25;
          detail.BackgroundColor = new Color(50, 50, 0, 128);
          
          var textBlock = new TextBlock();
@@ -111,7 +111,87 @@ var report = ReportBuilder
                  Nome = "Heitor Silva Romão", 
                  Idade = 4
              },
-             
+             new Pessoa
+             {
+                 Nome = "Ricardo Romão Soare",
+                 Idade = 47
+             }, 
+             new Pessoa
+             {
+                 Nome = "Rogéria Silva Abreu Soares", 
+                 Idade = 42
+             },
+             new Pessoa
+             {
+                 Nome = "Gabriele Silva Romão", 
+                 Idade = 5
+             },
+             new Pessoa
+             {
+                 Nome = "Heitor Silva Romão", 
+                 Idade = 4
+             },
+             new Pessoa
+             {
+                 Nome = "Ricardo Romão Soare",
+                 Idade = 47
+             }, 
+             new Pessoa
+             {
+                 Nome = "Rogéria Silva Abreu Soares", 
+                 Idade = 42
+             },
+             new Pessoa
+             {
+                 Nome = "Gabriele Silva Romão", 
+                 Idade = 5
+             },
+             new Pessoa
+             {
+                 Nome = "Heitor Silva Romão", 
+                 Idade = 4
+             },
+             new Pessoa
+             {
+                 Nome = "Ricardo Romão Soare",
+                 Idade = 47
+             }, 
+             new Pessoa
+             {
+                 Nome = "Rogéria Silva Abreu Soares", 
+                 Idade = 42
+             },
+             new Pessoa
+             {
+                 Nome = "Gabriele Silva Romão", 
+                 Idade = 5
+             },
+             new Pessoa
+             {
+                 Nome = "Heitor Silva Romão", 
+                 Idade = 4
+             },
+             new Pessoa
+             {
+                 Nome = "Ricardo Romão Soare",
+                 Idade = 47
+             }, 
+             new Pessoa
+             {
+                 Nome = "Rogéria Silva Abreu Soares", 
+                 Idade = 42
+             },
+             new Pessoa
+             {
+                 Nome = "Gabriele Silva Romão", 
+                 Idade = 5
+             },
+             new Pessoa
+             {
+                 Nome = "Heitor Silva Romão", 
+                 Idade = 4
+             },
+
              
          };
 
@@ -125,6 +205,8 @@ var report = ReportBuilder
          numPage.Location = new Point(pageFooter.Width - 50, 0);
          
          pageFooter.Controls.Add(numPage);
+
+         pageFooter.BackgroundColor = new Color(0, 255, 0, 255);
      })
      .build();
 

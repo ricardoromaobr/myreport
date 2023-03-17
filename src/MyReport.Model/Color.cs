@@ -26,35 +26,54 @@
 
 namespace MyReport.Model;
 
-public  struct Color : ICloneable
+public struct Color : ICloneable
 {
- 
-	public Color (double r, double g, double b):this(r, g, b,1){
-			 
-	}
+    public Color(double r, double g, double b) : this(r, g, b, 1)
+    {
+    }
 
-	public Color (double r, double g, double b, double a){
-		this.r=r;
-		this.b=b;
-		this.g=g;
-		this.a=a;			 
-	}
- 
-	double r;
-	public double R { get { return r; } set { r = value; } }
+    public Color(double r, double g, double b, double a)
+    {
+        this.r = r;
+        this.b = b;
+        this.g = g;
+        this.a = a;
+    }
 
-	double g;
-	public double G { get { return g; } set { g = value; } }
+    double r;
 
-	double b;
-	public double B { get { return b; } set { b = value; } }
+    public double R
+    {
+        get { return r; }
+        set { r = value; }
+    }
 
-	double a;
-	public double A { get { return a; } set { a = value; } }
-		
-	public object Clone ()
-	{
-		return new Color(r,g,b,a);		
-	}
+    double g;
 
+    public double G
+    {
+        get { return g; }
+        set { g = value; }
+    }
+
+    double b;
+
+    public double B
+    {
+        get { return b; }
+        set { b = value; }
+    }
+
+    double a;
+
+    public double A
+    {
+        get { return a; }
+        set { a = value; }
+    }
+
+    public object Clone()
+    {
+        return new Color(r, g, b, a);
+    }
 }
