@@ -12,28 +12,49 @@ public class ImageRenderer : IControlRenderer
         SKCanvas canvas = context as SKCanvas;
         Image image = control as Image;
         SKRect borderRect;
-        canvas.Save ();
-        borderRect = new SKRect ((float)image.Location.X, (float)image.Location.Y,(float) image.Width, (float)image.Height);
-        canvas.ClipRect(borderRect);
-        borderRect = new SKRect ((float)image.Location.X, (float)image.Location.Y, (float)image.Width, (float)image.Height);
+        canvas.Save();
         
+        borderRect = new SKRect((float) image.Location.X, (float) image.Location.Y, (float) (image.Location.X +image.Width),
+            (float) image.Bottom);
+        
+        canvas.ClipRect(borderRect);
+
+
         var paint = new SKPaint
         {
             Color = new SKColor((byte) image.BackgroundColor.R, (byte) image.BackgroundColor.G,
                 (byte) image.BackgroundColor.B, (byte) image.BackgroundColor.A)
         };
-        
-        //TODO: Renderer the image
-        
-        
+
+        var bitmap = SKBitmap.Decode(image.Data);
+        var point = new SKPoint((float) (image.Location.X + image.Border.LeftWidth), 
+            (float) (image.Location.Y + image.Border.TopWidth));
+
+        paint = new SKPaint
+        {
+            Color = SKColors.Yellow
+        };
+    
+
         canvas.DrawRect(borderRect, paint);
-        canvas.Restore (); 
+    canvas.DrawBitmap(bitmap, point);
+        
+        
+       
+    
+
+
+    canvas.Restore (); 
     }
 
     public Size Measure(object context, Control control)
     {
         Image image = control as Image;
-        SKRect borderRect = new SKRect ((float)image.Location.X, (float)image.Location.Y, (float)image.Width, (float)image.Height);
+        
+        
+        SKRect borderRect = new SKRect ((float)image.Location.X, (float)image.Location.Y, 
+            (float)(image.Location.X + image.Width + image.Border.LeftWidth + image.Border.RightWidth), 
+            (float)(image.Bottom + image.Border.TopWidth + image.Border.BottomWidth));
         return new MyReport.Model.Size(borderRect.Width,borderRect.Height);
     }
 
