@@ -28,45 +28,39 @@ namespace MyReport.Model.Controls;
 
 public class Image : Control, IResizable
 {
-	public Image () : base()
-	{
-		Border = new Border { WidthAll = 0, Color = new Color(0,0,0) };		
-		BackgroundColor = new Color(0.8,0.8,0.8);
-		ImageKey = String.Empty;
-	}
+    public Image() : base()
+    {
+        Border = new Border {WidthAll = 0, Color = new Color(0, 0, 0)};
+        BackgroundColor = new Color(0.8, 0.8, 0.8);
+        ImageKey = String.Empty;
+    }
 
-	public string ImageKey { get; set; }
-	public Border Border { get; set; }
+    public string ImageKey { get; set; }
+    public Border Border { get; set; }
 
-		
-	public override Control CreateControl ()
-	{
-		Image img = new Image ();
-		CopyBasicProperties (img);			
-		img.ImageKey = ImageKey;
-		img.Border = (Border)Border.Clone ();
-		img.Offset = new Point(offset.X,offset.Y);
-		return img;
-	}
-		
-	Point offset;
+    public byte[] Data { get; set; }
 
-	public Point Offset {
-		get { return offset; }
-		set { offset = value; }
-	}
-		
-		
-	public bool CanGrow {
-		get;
-		set;
-	}
+    public override Control CreateControl()
+    {
+        Image img = new Image();
+        CopyBasicProperties(img);
+        img.ImageKey = ImageKey;
+        img.Border = (Border) Border.Clone();
+        img.Offset = new Point(offset.X, offset.Y);
+        img.Data = Data;
+        return img;
+    }
 
-	public bool CanShrink {
-		get;
-		set;
-	}
+    Point offset;
 
-	
-		
+    public Point Offset
+    {
+        get { return offset; }
+        set { offset = value; }
+    }
+
+
+    public bool CanGrow { get; set; }
+
+    public bool CanShrink { get; set; }
 }
