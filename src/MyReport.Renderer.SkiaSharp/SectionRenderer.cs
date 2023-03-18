@@ -11,7 +11,9 @@ public class SectionRenderer: IControlRenderer
         SKCanvas canvas = context as SKCanvas;
         Section section = control as Section;
         SKRect borderRect;
+        
         canvas.Save ();
+        
         borderRect = new SKRect((float)section.Location.X, (float)section.Location.Y, (float)section.Width, (float)section.Bottom);
         canvas.ClipRect(borderRect);
         //borderRect = new SKRect((float)section.Location.X, (float)section.Location.Y, (float)section.Width, (float)section.Height);

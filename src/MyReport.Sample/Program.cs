@@ -1,6 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Net;
+using System.Net.Mime;
 using MyReport.FluentDesigner;
 using MyReport.Model;
 using MyReport.Model.Controls;
@@ -29,16 +30,18 @@ var report = ReportBuilder
 
          image.Data = Convert.FromBase64String(base64String);
 
-         image.Location = new Point(0, 14);
+         image.Location = new Point(250, 14);
          image.Width = 100;
          image.Height = 100;
          image.Border = new Border(10);
+         image.Border.Color = new Color(255, 0, 0,255);
+         image.BackgroundColor = new Color(0, 0, 0, 255);
          headerSecion.Controls.Add(image);
      })
      .BuilderPageHeader(pageHeader =>
      {
          
-         pageHeader.Height = 8;
+         pageHeader.Height = 2;
          var collumnName = new TextBlock();
          collumnName.Text = "Name";
          collumnName.Location = new Point(0, 0);
@@ -52,7 +55,7 @@ var report = ReportBuilder
      }) 
      .BuilderDetail(detail =>
      {
-         detail.Height = 25;
+         detail.Height = 5;
          detail.BackgroundColor = new Color(50, 50, 0, 128);
          
          var textBlock = new TextBlock();
@@ -60,7 +63,10 @@ var report = ReportBuilder
          textBlock.FieldName = "Nome";
          textBlock.Location = new Point(0, 0);
          textBlock.FontName = "Arial";
+         textBlock.Border = new Border(2);
+         textBlock.Border.Color = new Color(0, 255, 0, 255);
          textBlock.Width = 70;
+         textBlock.BackgroundColor = new Color(255, 255, 255, 255);
          
          var textBlock2 = new TextBlock();
          textBlock2.FieldKind = FieldKind.Data;

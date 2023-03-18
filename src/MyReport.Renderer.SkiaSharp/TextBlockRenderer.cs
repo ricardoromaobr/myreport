@@ -1,5 +1,7 @@
 using System.Drawing;
 using System.Net.Mime;
+using System.Text;
+using Microsoft.VisualBasic.FileIO;
 using MyReport.Model;
 using MyReport.Model.Controls;
 using SkiaSharp;
@@ -19,8 +21,8 @@ public class TextBlockRenderer : IControlRenderer
 
         borderRect = new SKRect((float) textBlock.Location.X,
             (float) textBlock.Location.Y,
-            (float) textBlock.Width,
-            (float) textBlock.Height);
+            (float) (textBlock.Location.X + textBlock.Width),
+            (float) textBlock.Bottom);
 
         if (!textBlock.CanGrow || DesignMode)
             c.ClipRect(borderRect);
@@ -40,15 +42,21 @@ public class TextBlockRenderer : IControlRenderer
         if (!DesignMode && (textBlock.CanGrow && size.Height > textBlock.Height ||
                             textBlock.CanShrink && size.Height < textBlock.Height))
         {
-            borderRect = new SKRect((float) textBlock.Location.X, (float) textBlock.Location.Y, (float) textBlock.Width,
-                (float) size.Height);
+            borderRect = new SKRect(
+                (float) textBlock.Location.X, 
+                (float) textBlock.Location.Y, 
+                (float) textBlock.Width,
+                (float) textBlock.Bottom);
         }
         else
         {
-            borderRect = new SKRect((float) textBlock.Location.X, (float) textBlock.Location.Y, (float) textBlock.Width,
-                (float) textBlock.Height);
+            borderRect = new SKRect((float) textBlock.Location.X, 
+                (float) textBlock.Location.Y, 
+                (float) (textBlock.Location.X + textBlock.Width),
+                (float) textBlock.Bottom);
         }
-
+        
+        //c.ClipRect(borderRect);
         c.DrawRect(borderRect, paint);
         DrawBorder(textBlock, c, size);
 
@@ -70,7 +78,6 @@ public class TextBlockRenderer : IControlRenderer
             Style = SKPaintStyle.Stroke
         };
 
-
         //horizontal lines
         // top line
         var x1 = 0.0f;
@@ -83,7 +90,7 @@ public class TextBlockRenderer : IControlRenderer
             paintBorder.StrokeWidth = (float) textBlock.Border.TopWidth;
             x1 = (float) textBlock.Location.X;
             x2 = (float) (textBlock.Location.X + textBlock.Width);
-            y1 = (float) textBlock.Location.Y;
+            y1 = (float) textBlock.Location.Y + 1;
             y2 = y1;
             c.DrawLine(x1, y1, x2, y2, paintBorder);
         }
@@ -91,7 +98,7 @@ public class TextBlockRenderer : IControlRenderer
         // bottom line
         if (textBlock.Border.BottomWidth > 0)
         {
-            y1 = (float) (y1 + size.Height - textBlock.Border.BottomWidth);
+            y1 = (float) (textBlock.Bottom - textBlock.Border.BottomWidth);
             y2 = y1;
             paintBorder.StrokeWidth = (float) textBlock.Border.BottomWidth;
             c.DrawLine(x1, y1, x2, y2, paintBorder);
@@ -102,7 +109,7 @@ public class TextBlockRenderer : IControlRenderer
         if (textBlock.Border.LeftWidth > 0)
         {
             paintBorder.StrokeWidth = (float) textBlock.Border.LeftWidth;
-            x1 = (float) textBlock.Location.X;
+            x1 = (float) textBlock.Location.X+1;
             y1 = (float) textBlock.Location.Y;
             x2 = x1;
             y2 = (float) (y1 + size.Height);
@@ -113,8 +120,8 @@ public class TextBlockRenderer : IControlRenderer
         if (textBlock.Border.RightWidth > 0)
         {
             paintBorder.StrokeWidth = (float) textBlock.Border.LeftWidth;
-            x1 = (float) (textBlock.Location.X + size.Width - textBlock.Border.RightWidth);
-            y1 = (float) (textBlock.Location.Y + size.Height);
+            x1 = (float) (textBlock.Location.X + size.Width - textBlock.Border.RightWidth-2);
+            y1 = (float) (textBlock.Location.Y);
             x2 = x1;
             y2 = (float) (y1 + size.Height);
             c.DrawLine(x1, y1, x2, y2, paintBorder);
@@ -132,6 +139,18 @@ public class TextBlockRenderer : IControlRenderer
         var lines = WrappedLines(textBlock.Text, (float) textBlock.Width, paint);
         var size = CalcSize(lines, (float) textBlock.Width, paint);
 
+        if ((control as TextBlock).CanGrow)
+        {
+            var maxLength = lines.Max(l => l.Length);
+            var text = lines.Where(s => s.Length == maxLength).First();
+            var maxLengthWidth = paint.MeasureText(text);
+            if (size.Width < maxLengthWidth)
+            {
+                lines = WrappedLines(textBlock.Text, (float) size.Width, paint);
+                size = CalcSize(lines, (float) size.Width, paint);
+            }
+        }
+
         size.Height += textBlock.Padding.Top + textBlock.Padding.Bottom;
         size.Width += textBlock.Padding.Left + textBlock.Padding.Right;
 
@@ -139,7 +158,6 @@ public class TextBlockRenderer : IControlRenderer
         size.Width += textBlock.Border.LeftWidth + textBlock.Border.RightWidth;
         return size;
     }
-
     private SKPaint CreatePaint(TextBlock? textBlock)
     {
         SKFontStyleSlant fontStyleSlant = DefineFontStyleSlant(textBlock!.FontSlant);
@@ -159,6 +177,7 @@ public class TextBlockRenderer : IControlRenderer
         {
             TextSize = (float) textBlock.FontSize,
             Typeface = typeface,
+            TextAlign = textAlign
         };
         return paint;
     }
@@ -198,9 +217,14 @@ public class TextBlockRenderer : IControlRenderer
         var paint = CreatePaint(control as TextBlock);
 
         var lines = WrappedLines(textBlock.Text,(float) textBlock.Width, paint);
-        
-        //TODO: Measure the size of the component   <---
+        var textBuilder = new StringBuilder();
 
+        var novoText = (control as TextBlock).Text.Replace(lines.Last(),"");
+        (control as TextBlock).Text = novoText;
+        textBlock.Text = lines.Last();
+        controls[0] = control;
+        controls[1] = textBlock;
+        
         return controls;
     }
 
@@ -226,23 +250,24 @@ public class TextBlockRenderer : IControlRenderer
 
     Size CalcSize(IList<string> wrapLines, float lineLengthLimit, SKPaint paint)
     {
-        // define the surface properties
-        var info = new SKImageInfo(256, 256 );
-
-// construct a new surface
-        var surface = SKSurface.Create(info);
-
-// get the canvas from the surface
-        var canvas = surface.Canvas;
-
-// draw on the canvas ...
-
-        var y = 0.0f;
-
+//         // define the surface properties
+//         var info = new SKImageInfo(256, 256 );
+//
+// // construct a new surface
+//         var surface = SKSurface.Create(info);
+//
+// // get the canvas from the surface
+//         var canvas = surface.Canvas;
+//
+// // draw on the canvas ...
+//
+         var y = 0.0f;
+         var width = 0.0f;
+        
         foreach (var wrapLine in wrapLines)
         {
-            canvas.DrawText(wrapLine, 0,0, paint);
             y += paint.FontSpacing;
+            width = Math.Max(paint.MeasureText(wrapLine), width);
         }
 
         return new Size
