@@ -74,6 +74,7 @@ var report = ReportBuilder
          textBlock2.Location = new Point(280, 0);
          textBlock2.FontColor = new Color(255, 0, 0);
          textBlock2.Width = 150;
+         textBlock2.FieldTextFormat = "{0:0.##}";
 
          var testeAny = new TextBlock();
          testeAny.Text = "qualquer coisa";
@@ -100,7 +101,7 @@ var report = ReportBuilder
              new Pessoa
              {
                  Nome = "Ricardo Romão Soare",
-                 Idade = 47
+                 Idade = 47.15655D
              }, 
              new Pessoa
              {
@@ -252,7 +253,7 @@ var reportEngine = ReportEngineBuilder
 class Pessoa
 {
     public string Nome { get; set; }
-    public int Idade { get; set; }
+    public double Idade { get; set; }
 }
      
      

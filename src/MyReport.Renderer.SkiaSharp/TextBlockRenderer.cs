@@ -253,7 +253,12 @@ public class TextBlockRenderer : IControlRenderer
 
         foreach (var wrappedLine in wrappedLines)
         {
-            canvas.DrawText(wrappedLine, x, y, defPaint);
+            string textToDraw;
+            if (string.IsNullOrEmpty(textBlock.FieldTextFormat))
+                textToDraw = wrappedLine;
+            else
+                textToDraw = string.Format(wrappedLine, textBlock.Text);
+            canvas.DrawText(textToDraw, x, y, defPaint);
             y += defPaint.FontSpacing;
         }
     }
