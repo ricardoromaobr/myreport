@@ -62,7 +62,7 @@ public class TextBlockRenderer : IControlRenderer
 
         paint = CreatePaint(textBlock);
 
-        WrapLines(textBlock, c, paint);
+        WrapLinesOnRender(textBlock, c, paint);
 
         c.Restore();
     }
@@ -85,6 +85,8 @@ public class TextBlockRenderer : IControlRenderer
         var x2 = x1;
         var y2 = y1;
 
+        
+        // draw the top line 
         if (textBlock.Border.TopWidth > 0)
         {
             paintBorder.StrokeWidth = (float) textBlock.Border.TopWidth;
@@ -95,10 +97,10 @@ public class TextBlockRenderer : IControlRenderer
             c.DrawLine(x1, y1, x2, y2, paintBorder);
         }
 
-        // bottom line
+        // draw the bottom line
         if (textBlock.Border.BottomWidth > 0)
         {
-            y1 = (float) (textBlock.Bottom - textBlock.Border.BottomWidth);
+            y1 = (float) (textBlock.Bottom - textBlock.Border.BottomWidth)+1;
             y2 = y1;
             paintBorder.StrokeWidth = (float) textBlock.Border.BottomWidth;
             c.DrawLine(x1, y1, x2, y2, paintBorder);
@@ -112,7 +114,7 @@ public class TextBlockRenderer : IControlRenderer
             x1 = (float) textBlock.Location.X+1;
             y1 = (float) textBlock.Location.Y;
             x2 = x1;
-            y2 = (float) (y1 + size.Height);
+            y2 = (float) (y1 + textBlock.Height);
             c.DrawLine(x1, y1, x2, y2, paintBorder);
         }
 
@@ -120,10 +122,10 @@ public class TextBlockRenderer : IControlRenderer
         if (textBlock.Border.RightWidth > 0)
         {
             paintBorder.StrokeWidth = (float) textBlock.Border.LeftWidth;
-            x1 = (float) (textBlock.Location.X + size.Width - textBlock.Border.RightWidth-2);
+            x1 = (float) (textBlock.Location.X + textBlock.Width - textBlock.Border.RightWidth)+1;
             y1 = (float) (textBlock.Location.Y);
             x2 = x1;
-            y2 = (float) (y1 + size.Height);
+            y2 = (float) (y1 + textBlock.Height);
             c.DrawLine(x1, y1, x2, y2, paintBorder);
         }
     }
@@ -222,13 +224,21 @@ public class TextBlockRenderer : IControlRenderer
         var novoText = (control as TextBlock).Text.Replace(lines.Last(),"");
         (control as TextBlock).Text = novoText;
         textBlock.Text = lines.Last();
+        textBlock.FieldName = null;
         controls[0] = control;
         controls[1] = textBlock;
         
         return controls;
     }
 
-
+    void WrapLinesOnRender(TextBlock textBlock, SKCanvas canvas, SKPaint paint)
+    {
+        var widthToWrapLine = textBlock.Width - textBlock.Border.LeftWidth - textBlock.Border.RightWidth -
+                              textBlock.Padding.Left - textBlock.Padding.Right; 
+        var oldSize = new Size {Height = textBlock.Size.Height, Width = textBlock.Size.Width};
+        textBlock.Size = new Size { Width = widthToWrapLine, Height = textBlock.Size.Height };
+        WrapLines(textBlock, canvas,paint);
+    }
     void WrapLines(TextBlock textBlock, SKCanvas canvas, SKPaint defPaint)
     {
         var wrappedLines = WrappedLines(textBlock.Text, (float) textBlock.Width, defPaint);

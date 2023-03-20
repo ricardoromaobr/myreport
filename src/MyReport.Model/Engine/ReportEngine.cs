@@ -317,6 +317,8 @@ public class ReportEngine
 					}
 					
 					Control [] brokenControl = ReportRenderer.BreakOffControlAtMostAtHeight (control, breakControlMax);
+					var size = ReportRenderer.MeasureControl(control);
+					control.Size = size;
 					realBreak = heightTreshold - (breakControlMax - brokenControl [0].Height);
 					StoreControlForNextSection (brokenControl [1]);
 					currentSectionControlsBuffer.Add (brokenControl [0]);
