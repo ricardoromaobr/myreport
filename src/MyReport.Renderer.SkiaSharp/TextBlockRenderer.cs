@@ -37,7 +37,7 @@ public class TextBlockRenderer : IControlRenderer
                 (byte) textBlock.BackgroundColor.A),
         };
 
-        var size = Measure(context, control);
+        var size = new Size();
 
         if (!DesignMode && (textBlock.CanGrow && size.Height > textBlock.Height ||
                             textBlock.CanShrink && size.Height < textBlock.Height))
