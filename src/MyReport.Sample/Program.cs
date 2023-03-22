@@ -36,6 +36,9 @@ var report = ReportBuilder
          image.Border = new Border(10);
          image.Border.Color = new Color(255, 0, 0,255);
          image.BackgroundColor = new Color(0, 0, 0, 255);
+         SubReport subReport = new();
+         subReport.Location = new Point(400, 5);
+         headerSecion.Controls.Add(subReport);
          headerSecion.Controls.Add(image);
      })
      .BuilderPageHeader(pageHeader =>
@@ -210,7 +213,12 @@ var report = ReportBuilder
          numPage.FieldKind = FieldKind.Expression;
          numPage.FieldName = "#PageNumber";
          numPage.Location = new Point(pageFooter.Width - 50, 0);
-         
+
+         var totalNumPages = new TextBlock();
+         totalNumPages.Location = new Point(pageFooter.Width - 100, 0);
+         totalNumPages.FieldName = "#NumberOfPages";
+         totalNumPages.FieldKind = FieldKind.Expression;
+         pageFooter.Controls.Add(totalNumPages);
          pageFooter.Controls.Add(numPage);
 
          pageFooter.BackgroundColor = new Color(0, 255, 0, 255);

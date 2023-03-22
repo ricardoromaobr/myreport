@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.VisualBasic.FileIO;
 using MyReport.Model;
 using MyReport.Model.Controls;
+using MyReport.Model.Data;
 using SkiaSharp;
 using Size = MyReport.Model.Size;
 
@@ -135,8 +136,15 @@ public class TextBlockRenderer : IControlRenderer
         SKCanvas c = context as SKCanvas;
         TextBlock textBlock = control as TextBlock;
         SKRect borderRect;
-
+        
         var paint = CreatePaint(textBlock);
+        
+        if (textBlock.FieldKind == FieldKind.Expression && textBlock.FieldName == "#NumberOfPages")
+            return new Size
+            {
+                Height = paint.FontSpacing,
+                Width = textBlock.Width
+            };
 
         var lines = WrappedLines(textBlock.Text, (float) textBlock.Width, paint);
         var size = CalcSize(lines, (float) textBlock.Width, paint);
@@ -287,7 +295,7 @@ public class TextBlockRenderer : IControlRenderer
 
         return new Size
         {
-            Width = lineLengthLimit,
+            Width = width,
             Height = y
         };
     }

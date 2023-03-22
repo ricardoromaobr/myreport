@@ -49,7 +49,7 @@ public class SubReport : Control, IResizable
 		Report.PageHeaderSection.BackgroundColor = new Color(0.1, 0.3, 0.2);
 		Report.DetailSection.BackgroundColor = new Color(0.78,0.78,0.78);
 		Report.ReportHeaderSection.Controls.Add (new TextBlock { FontSize = 12, FontName = "Helvetica", 
-			Text = "11text random text random text 08Random text 33 Random text random WW text random _text Random text random text r 44 andom text Random text random text random text ZZZZ", FontColor = new Color(1,0,0), Location = new Point (0, 10), CanGrow = true, Size = new Size (79, 30) });
+			Text = "11text random text random text 08Random text 33 Random text random WW text random _text Random text random text r 44 andom text Random text random text random text ZZZZ", FontColor = new Color(1,0,0), Location = new Point (400, 10), CanGrow = true, Size = new Size (79, 30) });
 		engine = new ReportEngine (this.Report,null) { 
 			IsSubreport = true  
 		};

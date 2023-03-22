@@ -24,6 +24,7 @@ public class ReportRuntime
 
     public ReportRuntime Run()
     {
+        ReportProcessed = false;
         _reportEngine.Process();
         ReportProcessed = true;
         return this;

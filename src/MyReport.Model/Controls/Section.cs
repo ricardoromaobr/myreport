@@ -35,7 +35,6 @@ public abstract class Section : Control, IResizable
 		Location = new Point(0,0);
 		CanGrow = true;
 		BackgroundColor =  new Color(1,1,1);
-			
 	}	
 		
 	protected SectionType sectionType;
