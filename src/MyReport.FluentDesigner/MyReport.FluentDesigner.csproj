@@ -4,6 +4,11 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Title>MyReport Fluent Designer</Title>
+        <Description>A Fluent report designer for dotnet</Description>
+        <Copyright>Ricardo Romão Soares</Copyright>
+        <RepositoryUrl>https://github.com/ricardoromaobr/myreport</RepositoryUrl>
+        <PackageTags>report </PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
