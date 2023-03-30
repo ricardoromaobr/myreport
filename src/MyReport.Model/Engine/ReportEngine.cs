@@ -4,6 +4,7 @@
 //       Tomasz Kubacki <Tomasz.Kubacki (at) gmail.com>
 // 
 // Copyright (c) 2010 Tomasz Kubacki 2010
+// Copyright (c) 2022 Ricardo Romão 
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,503 +31,621 @@ namespace MyReport.Model.Engine;
 
 public class ReportEngine
 {
-	internal IReportRenderer ReportRenderer;
-	Report Report;
-	IDataSource source;
-	internal ReportContext context;
-	internal Page currentPage = null;
-	bool beforeFirstDetailSection = true;
-	Section currentSection = null;
-	List<SpanInfo> currentSectionSpans = null;
-	List<Control> currentSectionOrderedControls = null;
-	List<Control> currentSectionControlsBuffer = null;
-	List<Control> currentPageFooterSectionControlsBuffer = null;
-	List<Control> subreportSectionControlsBuffer = null;
-	bool afterReportHeader = false;
+    internal IReportRenderer ReportRenderer;
+    Report Report;
+    IDataSource source;
+    internal ReportContext context;
+    internal Page currentPage = null;
+    bool beforeFirstDetailSection = true;
+    Section currentSection = null;
+    List<SpanInfo> currentSectionSpans = null;
+    List<Control> currentSectionOrderedControls = null;
+    List<Control> currentSectionControlsBuffer = null;
+    List<Control> currentPageFooterSectionControlsBuffer = null;
+    List<Control> subreportSectionControlsBuffer = null;
+    bool afterReportHeader = false;
 
-	public List<Control> CurrentPageFooterSectionControlsBuffer {
-		get => this.currentPageFooterSectionControlsBuffer;
-		set => currentPageFooterSectionControlsBuffer = value;
-	}
-	
-	List<Line> currentSectionExtendedLines = null;
-	double spanCorrection = 0;
-	public bool IsSubreport { get; set; }
+    public List<Control> CurrentPageFooterSectionControlsBuffer
+    {
+        get => this.currentPageFooterSectionControlsBuffer;
+        set => currentPageFooterSectionControlsBuffer = value;
+    }
 
-	bool dataSourceHasNextRow = true;
-	bool stop = false;
-	Dictionary<string, Field> parameters;
+    List<Line> currentSectionExtendedLines = null;
+    double spanCorrection = 0;
+    public bool IsSubreport { get; set; }
 
-	public ReportEngine (Report report, IReportRenderer renderer)
-	{
-		Report = report;
-		source = Report._dataSource;
-		parameters = Report.Parameters.ToDictionary (rp => rp.Name);
-		if (source == null)
-			source = new DummyDataSource ();
-		ReportRenderer = renderer;
-		currentSectionSpans = new List<SpanInfo> ();
-		currentSectionOrderedControls = new List<Control> ();
-		currentSectionExtendedLines = new List<Line> ();
-		currentSectionControlsBuffer = new List<Control> ();
-		subreportSectionControlsBuffer = new List<Control> ();
-		currentPageFooterSectionControlsBuffer = new List<Control> ();
-		
-		context = new ReportContext
-		{
-			CurrentPageIndex = 0, 
-			DataSource = null, 
-			Parameters = new Dictionary<string, string> (), 
-			ReportMode = ReportMode.Preview
-		};
-		
-		Report.Pages = new List<Page> ();
-		
-		NextPage ();
-		SelectCurrentSectionByTemplateSection (Report.PageFooterSection);
-	}
+    bool dataSourceHasNextRow = true;
+    bool stop = false;
+    Dictionary<string, Field> parameters;
 
-	public void Process ()
-	{
-		nextRecord ();
+    public ReportEngine(Report report, IReportRenderer renderer)
+    {
+        Report = report;
+        source = Report._dataSource;
+        parameters = Report.Parameters.ToDictionary(rp => rp.Name);
+        if (source == null)
+            source = new DummyDataSource();
+        ReportRenderer = renderer;
+        currentSectionSpans = new List<SpanInfo>();
+        currentSectionOrderedControls = new List<Control>();
+        currentSectionExtendedLines = new List<Line>();
+        currentSectionControlsBuffer = new List<Control>();
+        subreportSectionControlsBuffer = new List<Control>();
+        currentPageFooterSectionControlsBuffer = new List<Control>();
 
-		while (!ProcessReportPage ()) {
-			NextPage ();
-		}
-		
-		for (int i = 0; i < Report.Pages.Count; i++) {
-			foreach (var item in Report.Pages [i].Controls) {
-				if (item is IDataControl) {
-					IDataControl dc = item as IDataControl;
-					if (dc.FieldName == "#NumberOfPages") {
-						dc.Text = Report.Pages.Count.ToString ();
-					}
-				}
-			}
-		}
-		
-		if (source != null)
-			source.Reset ();
+        context = new ReportContext
+        {
+            CurrentPageIndex = 0,
+            DataSource = null,
+            Parameters = new Dictionary<string, string>(),
+            ReportMode = ReportMode.Preview
+        };
 
-		OnAfterReportProcess ();
-	}
+        Report.Pages = new List<Page>();
 
-	void nextRecord ()
-	{
-		dataSourceHasNextRow = source.MoveNext ();
-		context.RowIndex++;
-	}
+        NextPage();
+        SelectCurrentSectionByTemplateSection(Report.PageFooterSection);
+    }
 
-	public bool ProcessReportPage ()
-	{
-		bool result = false;
-		stop = false;
+    public void Process()
+    {
+        nextRecord();
 
-		do {
-			currentSection.TemplateControl.FireBeforeControlProcessing (context, currentSection);
+        while (!ProcessReportPage())
+        {
+            NextPage();
+        }
 
-			if (!currentSectionControlsBuffer.Contains (currentSection))
-				currentSectionControlsBuffer.Add (currentSection);
+        for (int i = 0; i < Report.Pages.Count; i++)
+        {
+            foreach (var item in Report.Pages[i].Controls)
+            {
+                if (item is IDataControl)
+                {
+                    IDataControl dc = item as IDataControl;
+                    if (dc.FieldName == "#NumberOfPages")
+                    {
+                        dc.Text = Report.Pages.Count.ToString();
+                    }
+                }
+            }
+        }
 
-			result = ProcessSectionUpToHeightTreshold (context.HeightLeftOnCurrentPage);
+        if (source != null)
+            source.Reset();
 
-			if (!result && currentSection.KeepTogether)
-				currentSectionControlsBuffer.Clear ();
+        OnAfterReportProcess();
+    }
 
-			AddControlsToCurrentPage (context.HeightUsedOnCurrentPage);
+    void nextRecord()
+    {
+        dataSourceHasNextRow = source.MoveNext();
+        context.RowIndex++;
+    }
 
-			context.HeightLeftOnCurrentPage -= currentSection.Height;
-			context.HeightUsedOnCurrentPage += currentSection.Height;
+    public bool ProcessReportPage()
+    {
+        bool result = false;
+        stop = false;
 
-			if (result) {
-				nextSection ();
-			} else {
-				return false;
-			}
-		} while (!stop);
+        do
+        {
+            currentSection.TemplateControl.FireBeforeControlProcessing(context, currentSection);
 
-		return result;
-	}
-	
-	Dictionary<string, List<Control>> controlsFromPreviousSectionPage = new Dictionary<string, List<Control>> ();
+            if (!currentSectionControlsBuffer.Contains(currentSection))
+                currentSectionControlsBuffer.Add(currentSection);
 
-	T SelectCurrentSectionByTemplateSection<T> (T s) where T : Section
-	{
-		T newSection = null;
-		if (controlsFromPreviousSectionPage.ContainsKey (s.Name)) {
-			currentSectionOrderedControls = controlsFromPreviousSectionPage [s.Name];
-			controlsFromPreviousSectionPage.Remove (s.Name);
-			newSection = currentSectionOrderedControls [0] as T;
-			currentSectionOrderedControls.RemoveAt (0);
-		} else {
-			newSection = s.CreateControl () as T;
-			newSection.Format ();
-			currentSectionOrderedControls = newSection.Controls.OrderBy (ctrl => ctrl.Top).ToList ();
-		}
-		currentSectionSpans.Clear ();
-		currentSectionExtendedLines.Clear ();
-		newSection.Location = new Point (s.Location.X, 0);
-		currentSection = newSection;
+            result = ProcessSectionUpToHeightTreshold(context.HeightLeftOnCurrentPage);
 
-		currentSectionControlsBuffer.Clear ();
-		return newSection;
-	}
+            if (!result && currentSection.KeepTogether)
+                currentSectionControlsBuffer.Clear();
 
-	double marginBottom = 0;
+            AddControlsToCurrentPage(context.HeightUsedOnCurrentPage);
 
-	/// <summary>
-	/// Processes the section up to heightTreshold.
-	/// </summary>
-	/// <returns>
-	///  returns <c>true</c> if finished processig section and <c>false</c> while not
-	/// </returns>
-	/// <param name='pageBreakTreshold'>
-	/// maxiumum height (starting from current section Location.Y) after which page will break
-	/// </param>
-	public bool ProcessSectionUpToHeightTreshold (double heightTreshold)
-	{
-		double span = 0;
-		double y = 0;
-		double maxHeight = 0;
-		double maxControlBottom = 0;
-		double tmpSpan = 0;
-		bool result = true;
-		double realBreak = 0;
-		double breakControlMax = 0;
-		bool allKeepTogether = false;
-		double heightTresholdIncludingBottomMargin = 0;
+            context.HeightLeftOnCurrentPage -= currentSection.Height;
+            context.HeightUsedOnCurrentPage += currentSection.Height;
 
-		if (currentSectionOrderedControls.Count > 0) {
-			maxControlBottom = currentSectionOrderedControls.Max (ctrl => ctrl.Bottom);
-		}
-		
-		marginBottom = currentSection.Height - maxControlBottom;
-		if (marginBottom < 0) marginBottom = 0;
-		
-		heightTresholdIncludingBottomMargin = heightTreshold - marginBottom;
+            if (result)
+            {
+                nextSection();
+            }
+            else
+            {
+                return false;
+            }
+        } while (!stop);
 
-		for (int i = 0; i < currentSectionOrderedControls.Count; i++) {
-			var control = currentSectionOrderedControls [i];
-			tmpSpan = double.MinValue;
+        return result;
+    }
 
-			if (!control.IsVisible)
-				continue;
+    Dictionary<string, List<Control>> controlsFromPreviousSectionPage = new Dictionary<string, List<Control>>();
 
-			if (control is Line && (control as Line).ExtendToBottom) {
-				var line = control as Line;
-				currentSectionExtendedLines.Add (line);
-			}
+    T SelectCurrentSectionByTemplateSection<T>(T s) where T : Section
+    {
+        T newSection = null;
+        if (controlsFromPreviousSectionPage.ContainsKey(s.Name))
+        {
+            currentSectionOrderedControls = controlsFromPreviousSectionPage[s.Name];
+            controlsFromPreviousSectionPage.Remove(s.Name);
+            newSection = currentSectionOrderedControls[0] as T;
+            currentSectionOrderedControls.RemoveAt(0);
+        }
+        else
+        {
+            newSection = s.CreateControl() as T;
+            newSection.Format();
+            currentSectionOrderedControls = newSection.Controls.OrderBy(ctrl => ctrl.Top).ToList();
+        }
 
-			if (source != null && control is IDataControl) {
-				IDataControl dc = control as IDataControl;
-				if (!string.IsNullOrEmpty (dc.FieldName)) {
+        currentSectionSpans.Clear();
+        currentSectionExtendedLines.Clear();
+        newSection.Location = new Point(s.Location.X, 0);
+        currentSection = newSection;
 
-					switch (dc.FieldKind) {
-						case FieldKind.Parameter:
-							if (parameters.ContainsKey (dc.FieldName)) {
-								var parameter = parameters [dc.FieldName];
-								dc.Text = parameter.GetValue (parameter.DefaultValue, dc.FieldTextFormat);
-							}
-							break;
-						case FieldKind.Expression:
-							if (dc.FieldName == "#PageNumber") {
-								dc.Text = context.CurrentPageIndex.ToString ();
-							} else if (dc.FieldName == "#RowNumber") {
-								dc.Text = context.RowIndex.ToString ();
-							}
-							break;
-						case FieldKind.Data:
-							if (source.ContainsField (dc.FieldName))
-								dc.Text = source.GetValue (dc.FieldName, dc.FieldTextFormat);
-							break;
-						default:
-							break;
-					}
-				}
-			}
+        currentSectionControlsBuffer.Clear();
+        return newSection;
+    }
 
-			y = control.Top + span;
-			Size controlSize = ReportRenderer.MeasureControl (control);
+    double marginBottom = 0;
 
-			foreach (SpanInfo item in currentSectionSpans) {
-				if (y > item.Treshold) {
-					tmpSpan = Math.Max (tmpSpan, item.Span);
-				}
-			}
+    /// <summary>
+    /// Processes the section up to heightTreshold.
+    /// </summary>
+    /// <returns>
+    ///  returns <c>true</c> if finished processig section and <c>false</c> while not
+    /// </returns>
+    /// <param name='pageBreakTreshold'>
+    /// maxiumum height (starting from current section Location.Y) after which page will break
+    /// </param>
+    public bool ProcessSectionUpToHeightTreshold(double heightTreshold)
+    {
+        double span = 0;
+        double y = 0;
+        double maxHeight = 0;
+        double maxControlBottom = 0;
+        double tmpSpan = 0;
+        bool result = true;
+        double realBreak = 0;
+        double breakControlMax = 0;
+        bool allKeepTogether = false;
+        double heightTresholdIncludingBottomMargin = 0;
 
-			span = tmpSpan == double.MinValue ? 0 : tmpSpan;
-			control.Top += span;
+        if (currentSectionOrderedControls.Count > 0)
+        {
+            maxControlBottom = currentSectionOrderedControls.Max(ctrl => ctrl.Bottom);
+        }
 
-			if (control is SubReport) {
-				SubReport sr = control as SubReport;
-				double maxSubreportHeight = ((heightTreshold - span) - sr.Top);
-				sr.ProcessUpToPage (this.ReportRenderer, maxSubreportHeight);
+        marginBottom = currentSection.Height - maxControlBottom;
+        if (marginBottom < 0) marginBottom = 0;
 
-				if (!(sr.Engine.context.HeightUsedOnCurrentPage > maxSubreportHeight)) {
-					controlSize = new Size (sr.Width, sr.Engine.context.HeightUsedOnCurrentPage);
-					subreportSectionControlsBuffer.AddRange (sr.Engine.currentPage.Controls);
-					sr.Engine.currentPage.Controls.Clear ();
+        heightTresholdIncludingBottomMargin = heightTreshold - marginBottom;
 
-					if (!sr.Finished && sr.CanGrow) {
-						StoreSectionForNextPage ();
+        for (int i = 0; i < currentSectionOrderedControls.Count; i++)
+        {
+            var control = currentSectionOrderedControls[i];
+            tmpSpan = double.MinValue;
 
-						var subreportClone = sr.CreateControl () as SubReport;
-						subreportClone.Top -= 0;
-						subreportClone.Engine = sr.Engine;
-						subreportClone.Height = sr.TemplateControl.Height;
+            if (!control.IsVisible)
+                continue;
 
-						StoreControlForNextSection (subreportClone);
-						sr.Engine.NextPage ();
-					}
-					if (!sr.Finished)
-						result = false;
-				} else {
-					Console.Write ("error:");
-				}
-			}
+            if (control is Line && (control as Line).ExtendToBottom)
+            {
+                var line = control as Line;
+                currentSectionExtendedLines.Add(line);
+            }
 
-			double heightBeforeGrow = control.Height;
-			double bottomBeforeGrow = control.Bottom;
-			control.Size = controlSize;
+            if (source != null && control is IDataControl)
+            {
+                IDataControl dc = control as IDataControl;
+                if (!string.IsNullOrEmpty(dc.FieldName))
+                {
+                    switch (dc.FieldKind)
+                    {
+                        case FieldKind.Parameter:
+                            if (parameters.ContainsKey(dc.FieldName))
+                            {
+                                var parameter = parameters[dc.FieldName];
+                                dc.Text = parameter.GetValue(parameter.DefaultValue, dc.FieldTextFormat);
+                            }
 
-			if (control.Bottom <= heightTreshold) {
-				if (!allKeepTogether) {
-					currentSectionControlsBuffer.Add (control);
-				} else {
-					StoreSectionForNextPage ();
-					var controlToStore = control;
-					controlToStore.Top -= realBreak;
-					controlToStore.Height = heightBeforeGrow;
-					StoreControlForNextSection (controlToStore);
-				}
-			} else {
-				result = false;
-				StoreSectionForNextPage ();
-				if (!currentSection.KeepTogether) {
+                            break;
+                        case FieldKind.Expression:
+                            if (dc.FieldName == "#PageNumber")
+                            {
+                                dc.Text = context.CurrentPageIndex.ToString();
+                            }
+                            else if (dc.FieldName == "#RowNumber")
+                            {
+                                dc.Text = context.RowIndex.ToString();
+                            }
 
-					breakControlMax = control.Height - ((control.Top + control.Height) - heightTreshold);
-					if (realBreak == 0)
-						realBreak = heightTreshold;
+                            break;
+                        case FieldKind.Data:
+                            if (source.ContainsField(dc.FieldName))
+                                dc.Text = source.GetValue(dc.FieldName, dc.FieldTextFormat);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
 
-					if (control.Top > heightTreshold) {
-						var controlToStore = control.CreateControl ();
-						controlToStore.Top -= realBreak;
-						controlToStore.Height = heightBeforeGrow;
-						StoreControlForNextSection (controlToStore);
-						continue;
-					}
-					
-					Control [] brokenControl = ReportRenderer.BreakOffControlAtMostAtHeight (control, breakControlMax);
-					var size = ReportRenderer.MeasureControl(control);
-					control.Size = size;
-					realBreak = heightTreshold - (breakControlMax - brokenControl [0].Height);
-					StoreControlForNextSection (brokenControl [1]);
-					currentSectionControlsBuffer.Add (brokenControl [0]);
-				} else {
-					var controlToStore = control;
-					controlToStore.Top -= realBreak;
-					controlToStore.Height = heightBeforeGrow;
+            y = control.Top + span;
+            Size controlSize = ReportRenderer.MeasureControl(control);
 
-					if (!allKeepTogether) {
+            foreach (SpanInfo item in currentSectionSpans)
+            {
+                if (y > item.Treshold)
+                {
+                    tmpSpan = Math.Max(tmpSpan, item.Span);
+                }
+            }
 
-						for (int w = 0; w < currentSectionControlsBuffer.Count; w++) {
-							currentSectionControlsBuffer [w].Height = currentSectionControlsBuffer [w].TemplateControl.Height;
-							controlsFromPreviousSectionPage [currentSection.Name].Add (currentSectionControlsBuffer [w]);
-						}
-						allKeepTogether = true;
-					}
+            span = tmpSpan == double.MinValue ? 0 : tmpSpan;
+            control.Top += span;
 
-					StoreControlForNextSection (controlToStore);
+            if (control is SubReport)
+            {
+                SubReport sr = control as SubReport;
+                double maxSubreportHeight = ((heightTreshold - span) - sr.Top);
+                sr.ProcessUpToPage(this.ReportRenderer, maxSubreportHeight);
 
-					continue;
-				}
+                if (!(sr.Engine.context.HeightUsedOnCurrentPage > maxSubreportHeight))
+                {
+                    controlSize = new Size(sr.Width, sr.Engine.context.HeightUsedOnCurrentPage);
+                    subreportSectionControlsBuffer.AddRange(sr.Engine.currentPage.Controls);
+                    sr.Engine.currentPage.Controls.Clear();
 
-			}
+                    if (!sr.Finished && sr.CanGrow)
+                    {
+                        StoreSectionForNextPage();
 
-			if (currentSection.CanGrow && maxHeight <= control.Bottom) {
-				maxHeight = Math.Max (control.Bottom, maxHeight);
-			}
+                        var subreportClone = sr.CreateControl() as SubReport;
+                        subreportClone.Top -= 0;
+                        subreportClone.Engine = sr.Engine;
+                        subreportClone.Height = sr.TemplateControl.Height;
 
-			if (!result) {
-				if (realBreak > 0) {
-					maxHeight = Math.Max (realBreak, maxHeight);
-				}
-			}
+                        StoreControlForNextSection(subreportClone);
+                        sr.Engine.NextPage();
+                    }
 
-			currentSectionSpans.Add (
-				new SpanInfo {
-					Treshold = bottomBeforeGrow,
-					Span = span + control.Bottom - bottomBeforeGrow
-				});
-		}
+                    if (!sr.Finished)
+                        result = false;
+                }
+                else
+                {
+                    Console.Write("error:");
+                }
+            }
 
-		double sectionHeightWithMargin = maxHeight + marginBottom;
-		if (!result) {
-			currentSection.Height = heightTreshold;
-		} else if ((currentSection.CanGrow && currentSection.Height < sectionHeightWithMargin) ||
-		           (currentSection.CanShrink && currentSection.Height > sectionHeightWithMargin)) {
-			currentSection.Height = sectionHeightWithMargin;
-		} else {
-			currentSection.Height = Math.Min (currentSection.Height, heightTreshold);
-		}
+            double heightBeforeGrow = control.Height;
+            double bottomBeforeGrow = control.Bottom;
+            control.Size = controlSize;
 
-		foreach (Line lineItem in currentSectionExtendedLines) {
-			if (lineItem.Location.Y == lineItem.End.Y) {
-				lineItem.Location = new Point (lineItem.Location.X, currentSection.Height - lineItem.LineWidth / 2);
-				lineItem.End = new Point (lineItem.End.X, currentSection.Height - lineItem.LineWidth / 2);
-			} else if (lineItem.Location.Y > lineItem.End.Y) {
-				lineItem.Location = new Point (lineItem.Location.X, currentSection.Height);
-			} else {
-				lineItem.End = new Point (lineItem.End.X, currentSection.Height);
-			}
+            if (control.Bottom <= heightTreshold)
+            {
+                if (!allKeepTogether)
+                {
+                    currentSectionControlsBuffer.Add(control);
+                }
+                else
+                {
+                    StoreSectionForNextPage();
+                    var controlToStore = control;
+                    controlToStore.Top -= realBreak;
+                    controlToStore.Height = heightBeforeGrow;
+                    StoreControlForNextSection(controlToStore);
+                }
+            }
+            else
+            {
+                result = false;
+                StoreSectionForNextPage();
+                if (!currentSection.KeepTogether)
+                {
+                    breakControlMax = control.Height - ((control.Top + control.Height) - heightTreshold);
 
-			if (!result) {
-				var newCtrl = lineItem.CreateControl ();
+                    if (realBreak == 0)
+                        realBreak = heightTreshold;
 
-				if (lineItem.Location.Y == lineItem.End.Y)
-					lineItem.IsVisible = false;
-				newCtrl.Top = 0;
-				StoreSectionForNextPage ();
-				controlsFromPreviousSectionPage [currentSection.Name].Insert (1, newCtrl);
-			}
-		}
-		
-		sectionToStore = null;
-		if (!currentSection.CanGrow) {
-			controlsFromPreviousSectionPage.Remove (currentSection.Name);
-			result = true;
-		}
-		return result;
-	}
+                    if (control.Top > heightTreshold)
+                    {
+                        var controlToStore = control.CreateControl();
+                        controlToStore.Top -= realBreak;
+                        controlToStore.Height = heightBeforeGrow;
+                        StoreControlForNextSection(controlToStore);
+                        continue;
+                    }
 
-	Section sectionToStore = null;
+                    Control[] brokenControl = ReportRenderer.BreakOffControlAtMostAtHeight(control, breakControlMax);
+                    var size = ReportRenderer.MeasureControl(control);
+                    control.Size = size;
+                    realBreak = heightTreshold - (breakControlMax - brokenControl[0].Height);
 
-	void StoreSectionForNextPage ()
-	{
-		if (!controlsFromPreviousSectionPage.ContainsKey (currentSection.Name)) {
-			sectionToStore = currentSection.CreateControl () as Section;
+                    if (control.Bottom > heightTreshold)
+                    {
+                        StoreControlForNextSection(control);
+                        if (brokenControl[0] is TextBlock )
+                            if (string.IsNullOrEmpty((brokenControl[0] as TextBlock).FieldName))
+                                (brokenControl[0] as TextBlock).Text += (brokenControl[1] as TextBlock).Text;
+                        
+                    }
+                    else
+                    {
+                        currentSectionControlsBuffer.Add(brokenControl[0]);
+                        StoreControlForNextSection(brokenControl[1]);
 
-			var controlsToNextPage = new List<Control> ();
-			controlsToNextPage.Add (sectionToStore);
-			controlsFromPreviousSectionPage.Add (currentSection.Name, controlsToNextPage);
-			sectionToStore.Height = 0;
-		}
-	}
-	void StoreControlForNextSection (Control controlToStore)
-	{
-		controlsFromPreviousSectionPage [currentSection.Name].Add (controlToStore);
-		sectionToStore.Height = Math.Max (sectionToStore.Height, controlToStore.Bottom + marginBottom);
-	}
-	void nextSection ()
-	{
-		switch (currentSection.SectionType) {
-			case SectionType.PageHeader:
-				if (context.CurrentPageIndex > 1) {
-					SelectCurrentSectionByTemplateSection (Report.PageFooterSection);
-				} else {
-					SetDetailsOrGroup ();
-				}
-				break;
-			case SectionType.PageFooter:
-				if (!afterReportHeader) {
-					SelectCurrentSectionByTemplateSection (Report.ReportHeaderSection);
-				} else {
-					SetDetailsOrGroup ();
-				}
-				break;
-			case SectionType.ReportHeader:
-				if (Report.ReportHeaderSection.BreakPageAfter) {
-					NextPage ();
-					stop = true;
-				} else {
-					if (context.CurrentPageIndex == 1) {
-						SelectCurrentSectionByTemplateSection (Report.PageHeaderSection);
-					} else {
-						SetDetailsOrGroup ();
-					}
-				}
-				afterReportHeader = true;
-				break;
-			case SectionType.Details:
-				SetDetailsOrGroup ();
-				break;
-			case SectionType.ReportFooter:
-				AddControlsToCurrentPage (Report.Height - Report.PageFooterSection.Height, currentPageFooterSectionControlsBuffer);
-				stop = true;
-				break;
-			default:
-				break;
-		}
-		
-		if (!currentSection.IsVisible)
-			nextSection ();
-	}
-	void SetDetailsOrGroup ()
-	{
-		if (!controlsFromPreviousSectionPage.ContainsKey (Report.DetailSection.Name) && !beforeFirstDetailSection) {
-			nextRecord ();
-		}
-		if (dataSourceHasNextRow || beforeFirstDetailSection) {
-			SelectCurrentSectionByTemplateSection (Report.DetailSection);
-		} else {
-			SelectCurrentSectionByTemplateSection (Report.ReportFooterSection);
-		}
-		beforeFirstDetailSection = false;
-	}
-	void AddControlsToCurrentPage (double span)
-	{
-		if (currentSection.SectionType != SectionType.PageFooter) {
-			AddControlsToCurrentPage (span + spanCorrection, currentSectionControlsBuffer);
-		} else {
-			currentPageFooterSectionControlsBuffer.AddRange (currentSectionControlsBuffer);
-			spanCorrection -= currentSection.Height;
-		}
-		
-		if (subreportSectionControlsBuffer.Count > 0) {
-			AddControlsToCurrentPage (span + spanCorrection, subreportSectionControlsBuffer);
-		}
-		currentSectionControlsBuffer.Clear ();
-		subreportSectionControlsBuffer.Clear ();
-	}
-	void AddControlsToCurrentPage (double span, List<Control> controls)
-	{
-		foreach (var control in controls) {
-			control.Top += span;
-			currentPage.Controls.Add (control);
-		}
-	}
-	void NextPage ()
-	{
-		AddControlsToCurrentPage (Report.Height - Report.PageFooterSection.Height, currentPageFooterSectionControlsBuffer);
-		spanCorrection = 0;
-		context.CurrentPageIndex++;
-		currentPage = new Page { PageNumber = context.CurrentPageIndex };
-		context.HeightLeftOnCurrentPage = Report.Height;
-		context.HeightUsedOnCurrentPage = 0;
-		currentPageFooterSectionControlsBuffer.Clear ();
-		Report.Pages.Add (currentPage);
-		SelectCurrentSectionByTemplateSection (Report.PageHeaderSection);
-	}
-	private void OnAfterReportProcess ()
-	{
-		//todo exec Report event
-	}
+                        if (brokenControl[1] is TextBlock)
+                            (brokenControl[1] as TextBlock).FieldName = null;
+                    }
+                }
+                else
+                {
+                    var controlToStore = control;
+                    controlToStore.Top -= realBreak;
+                    controlToStore.Height = heightBeforeGrow;
+
+                    if (!allKeepTogether)
+                    {
+                        for (int w = 0; w < currentSectionControlsBuffer.Count; w++)
+                        {
+                            currentSectionControlsBuffer[w].Height =
+                                currentSectionControlsBuffer[w].TemplateControl.Height;
+                            controlsFromPreviousSectionPage[currentSection.Name].Add(currentSectionControlsBuffer[w]);
+                        }
+
+                        allKeepTogether = true;
+                    }
+
+                    StoreControlForNextSection(controlToStore);
+
+                    continue;
+                }
+            }
+
+            if (currentSection.CanGrow && maxHeight <= control.Bottom)
+            {
+                maxHeight = Math.Max(control.Bottom, maxHeight);
+            }
+
+            if (!result)
+            {
+                if (realBreak > 0)
+                {
+                    maxHeight = Math.Max(realBreak, maxHeight);
+                }
+            }
+
+            currentSectionSpans.Add(
+                new SpanInfo
+                {
+                    Treshold = bottomBeforeGrow,
+                    Span = span + control.Bottom - bottomBeforeGrow
+                });
+        }
+
+        double sectionHeightWithMargin = maxHeight + marginBottom;
+        if (!result)
+        {
+            currentSection.Height = heightTreshold;
+        }
+        else if ((currentSection.CanGrow && currentSection.Height < sectionHeightWithMargin) ||
+                 (currentSection.CanShrink && currentSection.Height > sectionHeightWithMargin))
+        {
+            currentSection.Height = sectionHeightWithMargin;
+        }
+        else
+        {
+            currentSection.Height = Math.Min(currentSection.Height, heightTreshold);
+        }
+
+        foreach (Line lineItem in currentSectionExtendedLines)
+        {
+            if (lineItem.Location.Y == lineItem.End.Y)
+            {
+                lineItem.Location = new Point(lineItem.Location.X, currentSection.Height - lineItem.LineWidth / 2);
+                lineItem.End = new Point(lineItem.End.X, currentSection.Height - lineItem.LineWidth / 2);
+            }
+            else if (lineItem.Location.Y > lineItem.End.Y)
+            {
+                lineItem.Location = new Point(lineItem.Location.X, currentSection.Height);
+            }
+            else
+            {
+                lineItem.End = new Point(lineItem.End.X, currentSection.Height);
+            }
+
+            if (!result)
+            {
+                var newCtrl = lineItem.CreateControl();
+
+                if (lineItem.Location.Y == lineItem.End.Y)
+                    lineItem.IsVisible = false;
+                newCtrl.Top = 0;
+                StoreSectionForNextPage();
+                controlsFromPreviousSectionPage[currentSection.Name].Insert(1, newCtrl);
+            }
+        }
+
+        sectionToStore = null;
+        if (!currentSection.CanGrow)
+        {
+            controlsFromPreviousSectionPage.Remove(currentSection.Name);
+            result = true;
+        }
+
+        return result;
+    }
+
+    Section sectionToStore = null;
+
+    void StoreSectionForNextPage()
+    {
+        if (!controlsFromPreviousSectionPage.ContainsKey(currentSection.Name))
+        {
+            sectionToStore = currentSection.CreateControl() as Section;
+
+            var controlsToNextPage = new List<Control>();
+            controlsToNextPage.Add(sectionToStore);
+            controlsFromPreviousSectionPage.Add(currentSection.Name, controlsToNextPage);
+            sectionToStore.Height = 0;
+        }
+    }
+
+    void StoreControlForNextSection(Control controlToStore)
+    {
+        controlsFromPreviousSectionPage[currentSection.Name].Add(controlToStore);
+        sectionToStore.Height = Math.Max(sectionToStore.Height, controlToStore.Bottom + marginBottom);
+    }
+
+    void nextSection()
+    {
+        switch (currentSection.SectionType)
+        {
+            case SectionType.PageHeader:
+                if (context.CurrentPageIndex > 1)
+                {
+                    SelectCurrentSectionByTemplateSection(Report.PageFooterSection);
+                }
+                else
+                {
+                    SetDetailsOrGroup();
+                }
+
+                break;
+            case SectionType.PageFooter:
+                if (!afterReportHeader)
+                {
+                    SelectCurrentSectionByTemplateSection(Report.ReportHeaderSection);
+                }
+                else
+                {
+                    SetDetailsOrGroup();
+                }
+
+                break;
+            case SectionType.ReportHeader:
+                if (Report.ReportHeaderSection.BreakPageAfter)
+                {
+                    NextPage();
+                    stop = true;
+                }
+                else
+                {
+                    if (context.CurrentPageIndex == 1)
+                    {
+                        SelectCurrentSectionByTemplateSection(Report.PageHeaderSection);
+                    }
+                    else
+                    {
+                        SetDetailsOrGroup();
+                    }
+                }
+
+                afterReportHeader = true;
+                break;
+            case SectionType.Details:
+                SetDetailsOrGroup();
+                break;
+            case SectionType.ReportFooter:
+                AddControlsToCurrentPage(Report.Height - Report.PageFooterSection.Height,
+                    currentPageFooterSectionControlsBuffer);
+                stop = true;
+                break;
+            default:
+                break;
+        }
+
+        if (!currentSection.IsVisible)
+            nextSection();
+    }
+
+    void SetDetailsOrGroup()
+    {
+        if (!controlsFromPreviousSectionPage.ContainsKey(Report.DetailSection.Name) && !beforeFirstDetailSection)
+        {
+            nextRecord();
+        }
+
+        if (dataSourceHasNextRow || beforeFirstDetailSection)
+        {
+            SelectCurrentSectionByTemplateSection(Report.DetailSection);
+        }
+        else
+        {
+            SelectCurrentSectionByTemplateSection(Report.ReportFooterSection);
+        }
+
+        beforeFirstDetailSection = false;
+    }
+
+    void AddControlsToCurrentPage(double span)
+    {
+        if (currentSection.SectionType != SectionType.PageFooter)
+        {
+            AddControlsToCurrentPage(span + spanCorrection, currentSectionControlsBuffer);
+        }
+        else
+        {
+            currentPageFooterSectionControlsBuffer.AddRange(currentSectionControlsBuffer);
+            spanCorrection -= currentSection.Height;
+        }
+
+        if (subreportSectionControlsBuffer.Count > 0)
+        {
+            AddControlsToCurrentPage(span + spanCorrection, subreportSectionControlsBuffer);
+        }
+
+        currentSectionControlsBuffer.Clear();
+        subreportSectionControlsBuffer.Clear();
+    }
+
+    void AddControlsToCurrentPage(double span, List<Control> controls)
+    {
+        foreach (var control in controls)
+        {
+            control.Top += span;
+            currentPage.Controls.Add(control);
+        }
+    }
+
+    void NextPage()
+    {
+        AddControlsToCurrentPage(Report.Height - Report.PageFooterSection.Height,
+            currentPageFooterSectionControlsBuffer);
+        spanCorrection = 0;
+        context.CurrentPageIndex++;
+        currentPage = new Page {PageNumber = context.CurrentPageIndex};
+        context.HeightLeftOnCurrentPage = Report.Height;
+        context.HeightUsedOnCurrentPage = 0;
+        currentPageFooterSectionControlsBuffer.Clear();
+        Report.Pages.Add(currentPage);
+        SelectCurrentSectionByTemplateSection(Report.PageHeaderSection);
+    }
+
+    private void OnAfterReportProcess()
+    {
+        //todo exec Report event
+    }
 }
+
 internal struct SpanInfo
 {
-	internal double Treshold;
-	internal double Span;
+    internal double Treshold;
+    internal double Span;
 }
 
 static internal class SectionExtensions
 {
-	public static IEnumerable<Control> GetCrossSectionControls (this Section section, Section endSection)
-	{
-		foreach (var c in section.Controls.Where (ctrl => ctrl is ICrossSectionControl)) {
-			ICrossSectionControl csc = c as ICrossSectionControl;
-			csc.StartSection = section;
-			csc.EndSection = endSection;
-			yield return c;
-		}
-	}
+    public static IEnumerable<Control> GetCrossSectionControls(this Section section, Section endSection)
+    {
+        foreach (var c in section.Controls.Where(ctrl => ctrl is ICrossSectionControl))
+        {
+            ICrossSectionControl csc = c as ICrossSectionControl;
+            csc.StartSection = section;
+            csc.EndSection = endSection;
+            yield return c;
+        }
+    }
 }

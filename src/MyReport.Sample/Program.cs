@@ -37,7 +37,6 @@ var report = ReportBuilder
          image.Border.Color = new Color(255, 0, 0,255);
          image.BackgroundColor = new Color(0, 0, 0, 255);
          SubReport subReport = new();
-         subReport.Location = new Point(400, 5);
          headerSecion.Controls.Add(subReport);
          headerSecion.Controls.Add(image);
      })
