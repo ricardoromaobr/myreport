@@ -30,17 +30,12 @@ namespace MyReport.Model;
 
 public class Page
 {
-	public Page ()
-	{
-		Controls = new List<Control>();
-	}
-	public int PageNumber {
-		get;
-		set;
-	}
-		
-	public List<Control> Controls {
-		get;
-		set;
-	}
+    public Page()
+    {
+        Controls = new List<Control>();
+    }
+
+    public int PageNumber { get; set; }
+
+    public List<Control> Controls { get; set; }
 }

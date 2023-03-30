@@ -31,46 +31,28 @@ namespace MyReport.Model;
 
 public class ReportContext
 {
-	public ReportContext ()
-	{
-	}
-		
-	public Dictionary<string,string> Parameters {get;set;}
-		
-	public IDataSource DataSource {get;set;}
-				
-		
-	public int CurrentPageIndex {
-		get;
-		set;
-	}
-		
-	public int RowIndex {
-		get;
-		set;
-	}
- 
-	public ReportMode ReportMode {get;set;}
-		
-	double heightLeftOnCurrentPage;
-	public double HeightLeftOnCurrentPage {
-		get { 
-			return heightLeftOnCurrentPage;
-		}
-		internal set { heightLeftOnCurrentPage = value; }}
+    public ReportContext()
+    {
+    }
+    public Dictionary<string, string> Parameters { get; set; }
+    public IDataSource DataSource { get; set; }
+    public int CurrentPageIndex { get; set; }
+    public int RowIndex { get; set; }
+    public ReportMode ReportMode { get; set; }
 
+    double heightLeftOnCurrentPage;
 
+    public double HeightLeftOnCurrentPage
+    {
+        get { return heightLeftOnCurrentPage; }
+        internal set { heightLeftOnCurrentPage = value; }
+    }
+    
+    double heightUsedOnCurrentPage;
 
-     
-
-	double heightUsedOnCurrentPage;
-	public double HeightUsedOnCurrentPage
-	{
-		get
-		{
-			return heightUsedOnCurrentPage;
-		}
-		internal set { heightUsedOnCurrentPage = value; }
-	}
-
+    public double HeightUsedOnCurrentPage
+    {
+        get { return heightUsedOnCurrentPage; }
+        internal set { heightUsedOnCurrentPage = value; }
+    }
 }
