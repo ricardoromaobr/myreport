@@ -232,7 +232,6 @@ public class TextBlockRenderer : IControlRenderer
         var novoText = (control as TextBlock).Text.Replace(lines.Last(),"");
         (control as TextBlock).Text = novoText;
         textBlock.Text = lines.Last();
-        textBlock.FieldName = null;
         controls[0] = control;
         controls[1] = textBlock;
         
