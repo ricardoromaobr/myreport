@@ -32,7 +32,6 @@ public class SubReport : Control, IResizable
 {
 	public SubReport ()
 	{
-			
 		Report = new Report();
 		CanGrow = true;
 		Report.Height = 35;

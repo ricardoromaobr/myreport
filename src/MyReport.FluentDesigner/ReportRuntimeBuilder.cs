@@ -10,9 +10,10 @@ public class ReportRuntimeBuilder
     private Func<IReportRenderer> _addReportRendeter;
     private Func<IExportToPdfService> _configExportToPdf;
     private Action _addDefaultControlRenderer;
+    private Func<Report> _reportBuilder;
 
-    public static ReportRuntimeBuilder Create () => new ReportRuntimeBuilder();
-    
+    public static ReportRuntimeBuilder Create() => new ReportRuntimeBuilder();
+
     public ReportRuntimeBuilder AddReport(Report report)
     {
         _report = report;
@@ -22,6 +23,12 @@ public class ReportRuntimeBuilder
     public ReportRuntimeBuilder AddReport(Func<Report> addReport)
     {
         _addReport = addReport;
+        return this;
+    }
+
+    public ReportRuntimeBuilder ReportBuilder(Func<Report> reportBuilder)
+    {
+        _reportBuilder = reportBuilder;
         return this;
     }
 
@@ -43,7 +50,7 @@ public class ReportRuntimeBuilder
         return this;
     }
 
-    public ReportRuntimeBuilder AddDefaultControlsRenderer (IRegisterDefaultRenderers registerDefaultRenderers)
+    public ReportRuntimeBuilder AddDefaultControlsRenderer(IRegisterDefaultRenderers registerDefaultRenderers)
     {
         _addDefaultControlRenderer = () => registerDefaultRenderers.AddRenderers(_reportRenderer);
         return this;
@@ -55,12 +62,17 @@ public class ReportRuntimeBuilder
         var reportRenderer = _addReportRendeter?.Invoke();
 
         if (report is not null) _report = report;
+
+        // if the reportbuilder was placed execute it
+        if (_reportBuilder is not null)
+            _report = _reportBuilder?.Invoke();
+
         if (reportRenderer is not null) _reportRenderer = reportRenderer;
 
         var reportRuntime = new ReportRuntime(_report, _reportRenderer);
         reportRuntime.ExportToPdfService = _configExportToPdf?.Invoke()!;
         _addDefaultControlRenderer?.Invoke();
-        
+
         return reportRuntime;
     }
 }

@@ -366,10 +366,9 @@ public class ReportEngine
                     if (control.Bottom > heightTreshold)
                     {
                         StoreControlForNextSection(control);
-                        if (brokenControl[0] is TextBlock )
+                        if (brokenControl[0] is TextBlock)
                             if (string.IsNullOrEmpty((brokenControl[0] as TextBlock).FieldName))
                                 (brokenControl[0] as TextBlock).Text += (brokenControl[1] as TextBlock).Text;
-                        
                     }
                     else
                     {
@@ -385,13 +384,16 @@ public class ReportEngine
                     var controlToStore = control;
                     controlToStore.Top -= realBreak;
                     controlToStore.Height = heightBeforeGrow;
+                    controlToStore.Width = controlToStore.TemplateControl.Width;
 
                     if (!allKeepTogether)
                     {
-                        for (int w = 0; w < currentSectionControlsBuffer.Count; w++)
+                        for (int w = 1; w < currentSectionControlsBuffer.Count; w++)
                         {
                             currentSectionControlsBuffer[w].Height =
                                 currentSectionControlsBuffer[w].TemplateControl.Height;
+                            currentSectionControlsBuffer[w].Width =
+                                currentSectionControlsBuffer[w].TemplateControl.Width;
                             controlsFromPreviousSectionPage[currentSection.Name].Add(currentSectionControlsBuffer[w]);
                         }
 

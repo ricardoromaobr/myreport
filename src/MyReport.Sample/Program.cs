@@ -42,7 +42,7 @@ var report = ReportBuilder
      })
      .BuilderPageHeader(pageHeader =>
      {
-         
+         pageHeader.BackgroundColor = new(0, 0, 255,128);
          pageHeader.Height = 2;
          var collumnName = new TextBlock();
          collumnName.Text = "Name";
@@ -57,6 +57,7 @@ var report = ReportBuilder
      }) 
      .BuilderDetail(detail =>
      {
+         detail.KeepTogether = true;
          detail.Height = 5;
          detail.BackgroundColor = new Color(50, 50, 0, 128);
          
@@ -67,26 +68,28 @@ var report = ReportBuilder
          textBlock.FontName = "Arial";
          textBlock.Border = new Border(2);
          textBlock.Border.Color = new Color(0, 255, 0, 255);
-         textBlock.Width = 70;
+         textBlock.Width = 200;
          textBlock.BackgroundColor = new Color(255, 255, 255, 255);
+         textBlock.CanShrink = false;
+         textBlock.Padding = new Thickness(20);
          
          var textBlock2 = new TextBlock();
          textBlock2.FieldKind = FieldKind.Data;
          textBlock2.FieldName = "Idade";
          textBlock2.Location = new Point(280, 0);
          textBlock2.FontColor = new Color(255, 0, 0);
-         textBlock2.Width = 150;
+         textBlock2.Width = 250;
          textBlock2.FieldTextFormat = "{0:0.##}";
 
          var testeAny = new TextBlock();
          testeAny.Text = "qualquer coisa";
          testeAny.Location = new Point(320, 0);
-         testeAny.Width = 50;
+         testeAny.Width = 150;
          testeAny.FieldKind = FieldKind.Data;
          
          var testeAny2 = new TextBlock();
          testeAny2.Text = "roberto";
-         testeAny2.Location = new Point(380, 0);
+         testeAny2.Location = new Point(450, 0);
          testeAny2.Width = 100;
          testeAny2.FieldKind = FieldKind.Data;
          

@@ -44,19 +44,19 @@ public class TextBlockRenderer : IControlRenderer
                             textBlock.CanShrink && size.Height < textBlock.Height))
         {
             borderRect = new SKRect(
-                (float) textBlock.Location.X, 
-                (float) textBlock.Location.Y, 
+                (float) textBlock.Location.X,
+                (float) textBlock.Location.Y,
                 (float) textBlock.Width,
                 (float) textBlock.Bottom);
         }
         else
         {
-            borderRect = new SKRect((float) textBlock.Location.X, 
-                (float) textBlock.Location.Y, 
+            borderRect = new SKRect((float) textBlock.Location.X,
+                (float) textBlock.Location.Y,
                 (float) (textBlock.Location.X + textBlock.Width),
                 (float) textBlock.Bottom);
         }
-        
+
         //c.ClipRect(borderRect);
         c.DrawRect(borderRect, paint);
         DrawBorder(textBlock, c, size);
@@ -86,7 +86,7 @@ public class TextBlockRenderer : IControlRenderer
         var x2 = x1;
         var y2 = y1;
 
-        
+
         // draw the top line 
         if (textBlock.Border.TopWidth > 0)
         {
@@ -101,7 +101,7 @@ public class TextBlockRenderer : IControlRenderer
         // draw the bottom line
         if (textBlock.Border.BottomWidth > 0)
         {
-            y1 = (float) (textBlock.Bottom - textBlock.Border.BottomWidth)+1;
+            y1 = (float) (textBlock.Bottom - textBlock.Border.BottomWidth) + 1;
             y2 = y1;
             paintBorder.StrokeWidth = (float) textBlock.Border.BottomWidth;
             c.DrawLine(x1, y1, x2, y2, paintBorder);
@@ -112,7 +112,7 @@ public class TextBlockRenderer : IControlRenderer
         if (textBlock.Border.LeftWidth > 0)
         {
             paintBorder.StrokeWidth = (float) textBlock.Border.LeftWidth;
-            x1 = (float) textBlock.Location.X+1;
+            x1 = (float) textBlock.Location.X + 1;
             y1 = (float) textBlock.Location.Y;
             x2 = x1;
             y2 = (float) (y1 + textBlock.Height);
@@ -123,7 +123,7 @@ public class TextBlockRenderer : IControlRenderer
         if (textBlock.Border.RightWidth > 0)
         {
             paintBorder.StrokeWidth = (float) textBlock.Border.LeftWidth;
-            x1 = (float) (textBlock.Location.X + textBlock.Width - textBlock.Border.RightWidth)+1;
+            x1 = (float) (textBlock.Location.X + textBlock.Width - textBlock.Border.RightWidth) + 1;
             y1 = (float) (textBlock.Location.Y);
             x2 = x1;
             y2 = (float) (y1 + textBlock.Height);
@@ -136,9 +136,9 @@ public class TextBlockRenderer : IControlRenderer
         SKCanvas c = context as SKCanvas;
         TextBlock textBlock = control as TextBlock;
         SKRect borderRect;
-        
+
         var paint = CreatePaint(textBlock);
-        
+
         if (textBlock.FieldKind == FieldKind.Expression && textBlock.FieldName == "#NumberOfPages")
             return new Size
             {
@@ -146,15 +146,26 @@ public class TextBlockRenderer : IControlRenderer
                 Width = textBlock.Width
             };
 
+
         var lines = WrappedLines(textBlock.Text, (float) textBlock.Width, paint);
+
         var size = CalcSize(lines, (float) textBlock.Width, paint);
 
-        if ((control as TextBlock).CanGrow)
+        if (textBlock.CanShrink && size.Width < textBlock.Width)
+            size.Width = textBlock.Width;
+        
+        else if ((control as TextBlock).CanGrow)
         {
             var maxLength = lines.Max(l => l.Length);
             var text = lines.Where(s => s.Length == maxLength).First();
             var maxLengthWidth = paint.MeasureText(text);
-            if (size.Width < maxLengthWidth)
+
+            if (maxLengthWidth < textBlock.Width)
+            {
+                size = CalcSize(lines, (float) textBlock.Width, paint);
+                size.Width = textBlock.Width;
+            }
+            else if (size.Width < maxLengthWidth)
             {
                 lines = WrappedLines(textBlock.Text, (float) size.Width, paint);
                 size = CalcSize(lines, (float) size.Width, paint);
@@ -168,6 +179,7 @@ public class TextBlockRenderer : IControlRenderer
         size.Width += textBlock.Border.LeftWidth + textBlock.Border.RightWidth;
         return size;
     }
+
     private SKPaint CreatePaint(TextBlock? textBlock)
     {
         SKFontStyleSlant fontStyleSlant = DefineFontStyleSlant(textBlock!.FontSlant);
@@ -219,33 +231,34 @@ public class TextBlockRenderer : IControlRenderer
     public Control[] BreakOffControlAtMostAtHeight(object context, Control control, double height)
     {
         var canvas = context as SKCanvas;
-        
+
         Control[] controls = new Control[2];
 
         TextBlock textBlock = control.CreateControl() as TextBlock;
 
         var paint = CreatePaint(control as TextBlock);
 
-        var lines = WrappedLines(textBlock.Text,(float) textBlock.Width, paint);
+        var lines = WrappedLines(textBlock.Text, (float) textBlock.Width, paint);
         var textBuilder = new StringBuilder();
 
-        var novoText = (control as TextBlock).Text.Replace(lines.Last(),"");
+        var novoText = (control as TextBlock).Text.Replace(lines.Last(), "");
         (control as TextBlock).Text = novoText;
         textBlock.Text = lines.Last();
         controls[0] = control;
         controls[1] = textBlock;
-        
+
         return controls;
     }
 
     void WrapLinesOnRender(TextBlock textBlock, SKCanvas canvas, SKPaint paint)
     {
         var widthToWrapLine = textBlock.Width - textBlock.Border.LeftWidth - textBlock.Border.RightWidth -
-                              textBlock.Padding.Left - textBlock.Padding.Right; 
+                              textBlock.Padding.Left - textBlock.Padding.Right;
         var oldSize = new Size {Height = textBlock.Size.Height, Width = textBlock.Size.Width};
-        textBlock.Size = new Size { Width = widthToWrapLine, Height = textBlock.Size.Height };
-        WrapLines(textBlock, canvas,paint);
+        textBlock.Size = new Size {Width = widthToWrapLine, Height = textBlock.Size.Height};
+        WrapLines(textBlock, canvas, paint);
     }
+
     void WrapLines(TextBlock textBlock, SKCanvas canvas, SKPaint defPaint)
     {
         var wrappedLines = WrappedLines(textBlock.Text, (float) textBlock.Width, defPaint);
@@ -272,20 +285,10 @@ public class TextBlockRenderer : IControlRenderer
 
     Size CalcSize(IList<string> wrapLines, float lineLengthLimit, SKPaint paint)
     {
-//         // define the surface properties
-//         var info = new SKImageInfo(256, 256 );
-//
-// // construct a new surface
-//         var surface = SKSurface.Create(info);
-//
-// // get the canvas from the surface
-//         var canvas = surface.Canvas;
-//
-// // draw on the canvas ...
-//
-         var y = 0.0f;
-         var width = 0.0f;
-        
+
+        var y = 0.0f;
+        var width = 0.0f;
+
         foreach (var wrapLine in wrapLines)
         {
             y += paint.FontSpacing;
@@ -312,15 +315,15 @@ public class TextBlockRenderer : IControlRenderer
         else
         {
             var i = 0;
-            var wordWithSpace = string.Empty; 
-            
+            var wordWithSpace = string.Empty;
+
             foreach (var word in words)
             {
                 if (i < words.Length - 1)
                     wordWithSpace = word + " ";
                 else
                     wordWithSpace = word;
-                
+
                 var wordWithSpaceLength = defPaint.MeasureText(wordWithSpace);
                 if (lineLength + wordWithSpaceLength > lineLengthLimit)
                 {

@@ -9,6 +9,7 @@
         <Copyright>Ricardo Romão Soares</Copyright>
         <RepositoryUrl>https://github.com/ricardoromaobr/myreport</RepositoryUrl>
         <PackageTags>report </PackageTags>
+        <PackageReleaseNotes>Preview 1 - The experimental version</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
